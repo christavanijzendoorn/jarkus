@@ -277,13 +277,14 @@ class Transects:
         """
         Convert current selection of data to .jrk string
         """
-        fmt = '%6i%6i3'
+        fmt = '%6i %6i'
         years = self.time2year(self.get_data('time'))
         z = self.get_data('altitude')
         o = self.get_data('origin')
         aids = self.get_data('id')
         x = self.get_data('cross_shore')
-        s = ''
+        ###s = ''
+        s = []
         for ia,aid in enumerate(aids):
             for i,year in enumerate(years):
                 zc = np.ma.masked_invalid(np.squeeze(z[i,ia,:]))
@@ -291,25 +292,12 @@ class Transects:
                 nx = np.count_nonzero(idx)
                 if nx == 0:
                     continue
-                zc = zc[idx]*100
+                zc = zc[idx]
                 xc = x[idx]
                 data = list(zip(xc, zc))
                 if not nx%5 == 0:
                     # fill incomplete rows with dummy values
                     dummyvals = [(99999, 999999)] * (5-nx%5)
                     data = data + dummyvals
-                # create header line
-                s = '%s%6i%6i%6i%6i%6i%6i%6i\n'%(s, (aid-aid%1e6)/1e6, year, aid%1e6, 0, 0, 0, nx)
-                for j,d in enumerate(zip(data)):
-                    if d == (99999, 999999):
-                        fmt = '%6i%6i9'
-                    else:
-                        # add code 3 (interpolated) to all 
-                        fmt = '%6i%6i3'
-                        # TODO: use actual code
-                    s = s + fmt%d[0]
-                    if (j+1)%5==0:
-                        s = '%s\n'%s
-                    else:
-                        s = '%s   '%s
+                s.append([aid, year, data]) 
         return s
