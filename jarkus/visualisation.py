@@ -46,13 +46,13 @@ def multilineplot(x_data, y_data, time, x_label="", y_label="", title="", xlim=[
     #plt.show()
     
     # Save figure as png in predefined directory
-    plt.savefig(plots_dir + 'Transect_' + title[8:] + '.png')
-    pickle.dump(fig, open(plots_dir + 'Transect_' + title[8:] + '.fig.pickle', 'wb'))
+    plt.savefig(plots_dir + 'Transect_' + title[9:] + '.png')
+    pickle.dump(fig, open(plots_dir + 'Transect_' + title[9:] + '.fig.pickle', 'wb'))
     
     plt.close()
     
-def reopen_pickle(title="", plots_dir=""):
+def reopen_pickle(plots_dir="", transect=""):
     #To reopen pickle:
     import pickle
-    figx = pickle.load(open(plots_dir + 'Transect_' + title[8:] + '.fig.pickle','rb'))    
+    figx = pickle.load(open(plots_dir + 'Transect_' + transect + '.fig.pickle','rb'))    
     figx.show()
