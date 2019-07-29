@@ -301,3 +301,33 @@ class Transects:
                     data = data + dummyvals
                 s.append([aid, year, data]) 
         return s
+    def filter_jrk(self, idx, years_req=[]):
+        a = []
+        self.set_filter(alongshore=idx, year=years_req)
+        a = self.get_jrk()
+
+        # Convert retrieved data for easy visualisation
+        x_values = []
+        y_values = []  
+        years_included = []
+        for i in range(len(a)):
+            years_included.append(a[i][1])
+        
+            x = np.array([i[0] for i in a[i][2]])
+            x[x == 99999] = np.nan # Convert 99999 to nan values, so they are not included in visualisation
+            x_values.append(x)
+            
+            y = np.array([i[1] for i in a[i][2]])
+            y[y == 99999] = np.nan # Convert 99999 to nan values, so they are not included in visualisation
+            y_values.append(y)
+    
+        # Find difference between years included and those requested
+        years_missing = list(set(years_req) - set(years_included))
+        # If all years were available do nothing,
+        if len(years_missing) == 0:
+            print("All requested years were available")
+            # If years were missing, show error
+        else: 
+            print("ERROR - For transect {} the following year(s) were not available:".format(a[0][0]))
+            print(years_missing)
+        return a, x_values, y_values, years_included
