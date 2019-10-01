@@ -14,9 +14,9 @@ Jk = Transects(url='http://opendap.deltares.nl/thredds/dodsC/opendap/rijkswaters
 ids = Jk.get_data('id')
 
 # Set the transect and years for retrieval request
-transect_name = "16_Zeeuws-Vlaanderen"
-transect = np.arange(17000011, 17001487, 1)
-years_requested = range(1965, 2020)
+transect_name = "04_Terschelling"
+transect = 8009325#np.arange(17000011, 17001487, 1)
+years_requested = range(1960, 1970)
 
 # Set x and y limit of plots - Leave lists empty (i.e. []) for automatic axis limits
 xlimit = [-500, 1500] # EXAMPLE: [-400,1000]
@@ -35,9 +35,10 @@ for idx in np.nonzero(idxs)[0]:
     
 ##########################################################
 # Reopening a pickled figure, for interactive editting
+#%matplotlib auto
 from visualisation import reopen_pickle
-fig_transect = str(8009300)
-Dir_fig = "C:\\Users\\cijzendoornvan\\Documents\\GitHub\\jarkus\\jarkus\\Figures\\09_Meijendel\\"
+fig_transect = str(13001668)
+Dir_fig = "C:\\Users\\cijzendoornvan\\Documents\\GitHub\\jarkus\\jarkus\\Figures\\13_Westenschouwen\\"
 
 #reopen_pickle(Dir_fig, fig_transect)
 ##########################################################
@@ -48,5 +49,4 @@ Dir_fig = "C:\\Users\\cijzendoornvan\\Documents\\GitHub\\jarkus\\jarkus\\Figures
 # cross_shore = [np.array([-50, 0, 50, 100, 150]), np.array([-50, 0, 50, 100, 150]), np.array([-50, 0, 50, 100, 150])]
 # elevation = [np.array([-5, 0, 4, 9, 15]), np.array([-3, 0, 3, 7, 12]), np.array([-4, 0, 4, 8, 14])]
 """ 
-
 
