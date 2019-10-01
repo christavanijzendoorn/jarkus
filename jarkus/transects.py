@@ -283,6 +283,10 @@ class Transects:
         o = self.get_data('origin')
         aids = self.get_data('id')
         x = self.get_data('cross_shore')
+        mhw = self.get_data('mean_high_water')
+        mlw = self.get_data('mean_low_water')
+        max_y = self.get_data('max_altitude_measurement')
+        min_y = self.get_data('min_altitude_measurement')
         ###s = ''
         s = []
         for ia,aid in enumerate(aids):
@@ -299,7 +303,7 @@ class Transects:
                     # fill incomplete rows with dummy values
                     dummyvals = [(99999, 999999)] * (5-nx%5)
                     data = data + dummyvals
-                s.append([aid, year, data]) 
+                s.append([aid, year, data, mhw, mlw, max_y, min_y]) 
         return s
     def filter_jrk(self, idx, years_req=[]):
         a = []
@@ -331,3 +335,33 @@ class Transects:
             print("ERROR - For transect {} the following year(s) were not available:".format(a[0][0]))
             print(years_missing)
         return a, x_values, y_values, years_included
+    
+    def get_dataframe(self, transect, years_requested):
+        import pandas as pd
+        ids = self.get_data('id')
+        idxs = np.isin(ids, transect)
+        df_jrk_all = pd.DataFrame()
+        for idx in np.nonzero(idxs)[0]:   
+            a, x_values, y_values, years_included = self.filter_jrk(idx,years_requested)
+            df_jrk_yrs = pd.DataFrame()
+            
+            for indx in range(len(x_values)):
+                df_jrk = pd.DataFrame()
+                x = x_values[indx]
+                y = y_values[indx]
+                mhw = float(a[indx][3][0])
+                mlw = float(a[indx][4][0])
+                max_y = float(a[indx][5][indx])
+                min_y = float(a[indx][6][indx])
+                
+                trsct = str(a[indx][0])
+                yr = str(a[indx][1])
+                
+                df_jrk = pd.DataFrame({'transect': trsct, 'year': yr, 'x': x, 'y': y, 'mhw': mhw, 'mlw': mlw, 'max_elevation': max_y, 'min_elevation': min_y})
+                
+                df_jrk_yrs = df_jrk_yrs.append(df_jrk)
+            df_jrk_all = df_jrk_all.append(df_jrk_yrs)
+        df_jrk_all.set_index(['transect', 'year'], inplace=True)
+        years_included = [str(y) for y in years_included]
+            
+        return df_jrk_all, years_included
