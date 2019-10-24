@@ -29,12 +29,12 @@ def multilineplot(x_data, y_data, time, x_label="", y_label="", title="", xlim=[
         
     #added this to get the legend to work
     handles,labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc='upper left',ncol=2)
+    ax.legend(handles, labels, loc='upper left',ncol=2, fontsize = 20)
     
     # Label the axes and provide a title
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_title(title, fontsize = 24)
+    ax.set_xlabel(x_label, fontsize = 20)
+    ax.set_ylabel(y_label, fontsize = 20)
     if len(xlim) != 0:
         ax.set_xlim(xlim)
     if len(ylim) != 0:
