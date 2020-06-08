@@ -1,3 +1,29 @@
+'''This file is part of Jarkus Analysis Toolbox.
+   
+JAT is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+   
+JAT is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+   
+You should have received a copy of the GNU General Public License
+along with JAT.  If not, see <http://www.gnu.org/licenses/>.
+   
+JAT  Copyright (C) 2020 Christa van IJzendoorn
+c.o.vanijzendoorn@tudelft.nl
+Delft University of Technology
+Faculty of Civil Engineering and Geosciences
+Stevinweg 1
+2628CN Delft
+The Netherlands
+'''
+
+# This script was created to try and build a simpler version of the already existing Jarkus Transects python toolbox. Work in progress....
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Nov 19 11:31:25 2019
