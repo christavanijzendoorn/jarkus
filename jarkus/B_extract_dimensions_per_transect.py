@@ -7,48 +7,61 @@ Created on Mon Jul 29 11:20:42 2019
 ##################################
 ####          PACKAGES        ####
 ##################################
+import json
 import numpy as np
 import pandas as pd
 from scipy.interpolate import griddata
 from scipy.signal import find_peaks
 import time
+import pickle
 
 from analysis_functions import get_volume, get_gradient, find_intersections
 from jarkus.transects import Transects
+from IPython import get_ipython
+
+from pybeach.beach import Profile
+
+get_ipython().run_line_magic('matplotlib', 'auto')
 
 #%%
 ##################################
 ####       RETRIEVE DATA      ####
 ##################################
+# load basic settings from .txt file
+with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Settings.txt") as file:
+    settings = json.load(file)
+
 # Collect the JARKUS data from the server
-#Jk = Transects(url='http://opendap.deltares.nl/thredds/catalog/opendap/rijkswaterstaat/jarkus/profiles/catalog.html?dataset=varopendap/rijkswaterstaat/jarkus/profiles/transect_r20190731.nc')
-Jk = Transects(url='https://opendap.tudelft.nl/thredds/dodsC/data2/deltares/rijkswaterstaat/jarkus/profiles/transect_r20180914.nc')
+Jk = Transects(url= settings['url'])
 ids = Jk.get_data('id') # ids of all available transects
 
 #%%
 ##################################
 ####    USER-DEFINED REQUEST  ####
 ##################################
+# Select whether this is a new run, or whether a dimension is recalculated or added to the dataframe
+new_run = False
+
 # Select which dimensions should be calculated from the transects
-dune_height_and_location = True
-mean_sea_level      = True
-mean_low_water      = True
-mean_high_water     = True
-intertidal_width    = True
-landward_point      = True
-seaward_point       = True
+dune_height_and_location = False
+mean_sea_level      = False
+mean_low_water      = False
+mean_high_water     = False
+intertidal_width    = False
+landward_point      = False
+seaward_point       = False
 dune_foot_location  = True
-beach_width         = True
-beach_gradient      = True
-dune_front_width    = True
-dune_gradient       = True
-dune_volume         = True
-intertidal_gradient = True
-intertidal_volume   = True
-foreshore_gradient  = True
-foreshore_volume    = True
-active_profile_gradient  = True
-active_profile_volume    = True
+beach_width         = False
+beach_gradient      = False
+dune_front_width    = False
+dune_gradient       = False
+dune_volume         = False
+intertidal_gradient = False
+intertidal_volume   = False
+foreshore_gradient  = False
+foreshore_volume    = False
+active_profile_gradient  = False
+active_profile_volume    = False
 
 # Set which years should be analysed
 years_requested = list(range(1965, 2020))
@@ -63,29 +76,22 @@ if execute_all_transects == False:
     transect_req        = [8009325]
     idxs = np.isin(transect_req, ids) # check which transect are available of those that were requested
     ids_filtered = np.array(transect_req)[np.nonzero(idxs)[0]]
-    Dir_pickles = "C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Figures/" + transect_name + '/'  
+    Dir_pickles = settings['Dir_figures'] + transect_name + '/'  
 else:
     # Filter out location that are not suitable for analysis. Based on Kustlijnkaarten 2019, RWS.
-    remove1 = list(range(2000303,2000304))
-    remove2 = list(range(2000720,2000721))
-    remove3 = list(range(2002019,2002020))
-    remove4 = list(range(4002001,4005917,1))
-    remove5 = list(range(5003300,5004000,1))
-    remove6 = list(range(6000416,6000900,1))
-    remove7 = list(range(6003070,6003453,1))
-    remove8 = list(range(8000000,8005626,1))
-    remove9 = list(range(9010193,9010194,1))
-    remove10 = list(range(10000000,10001411,1))
-    remove11 = list(range(11000660,11000661,1))
-    remove12 = list(range(11000680,11000681,1))
-    remove13 = list(range(11000700,11000841,1))
-    remove14 = list(range(14000000,14000700,1))
-    remove15 = list(ids[0:1707]) #cn be removed
+    with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Filter.txt") as file:
+        filter_transects = json.load(file)
     
-    remove_all = remove1 + remove2 + remove3 + remove4 + remove5 + remove6 + remove7 + remove8 + remove9 + remove10 + remove11 + remove12 + remove13 + remove14 + remove15
+    filter_all = []
+    for key in filter_transects:
+        filter_all += list(range(int(filter_transects[key]["begin"]), int(filter_transects[key]["eind"])))
+        
+    # Use this if you want to skip transects, e.g. if your battery died during running...
+    #skip_transects = list(ids[1:109])
+    #filter_all = filter_all + skip_transects
     
-    ids_filtered = [x for x in ids if x not in remove_all]
-    Dir_pickles = "C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Figures/Dataframes_per_transect_try2/"
+    ids_filtered = [x for x in ids if x not in filter_all]
+    Dir_pickles = settings['Dir_C3']
 
 #%%
 ##################################
@@ -95,12 +101,13 @@ years_requested_str = [str(yr) for yr in years_requested]
 
 for idx in ids_filtered: # For each available transect go though the entire analysis
     print(idx)
-    start = time.time()
-    Dimensions = []
+    #start = time.time()
     trsct = str(idx)
     
+    Dimensions = []
+        
     # Here the JARKUS filter is set and the data for the requested transect and years is retrieved
-    Jk = Transects(url='https://opendap.tudelft.nl/thredds/dodsC/data2/deltares/rijkswaterstaat/jarkus/profiles/transect_r20180914.nc')
+    Jk = Jk = Transects(url= settings['url'])
     df, years_available = Jk.get_dataframe(idx, years_requested)
     
     # Interpolate x and y along standardized cross shore axis
@@ -137,18 +144,22 @@ for idx in ids_filtered: # For each available transect go though the entire anal
         else: 
             years_filtered.append(yr)
     
-    Dimensions = pd.DataFrame({'transect': trsct, 'years': years_requested_str})
-    Dimensions.set_index('years', inplace=True)
+    if new_run == True:
+        Dimensions = pd.DataFrame({'transect': trsct, 'years': years_requested_str})
+        Dimensions.set_index('years', inplace=True)
+    else:
+        pickle_file = Dir_pickles + 'Transect_' + trsct + '_dataframe.pickle'
+        Dimensions = pickle.load(open(pickle_file, 'rb'))
+
     
-    Time1 = time.time()
-    print('initialisation ' + str(Time1 - start) + ' seconds')
+    #Time1 = time.time()
+    #print('initialisation ' + str(Time1 - start) + ' seconds')
     
 #%%
 ###################################  
 ### DEFINE DUNE CREST LOCATION  ###
 ###################################
     if dune_height_and_location == True:
-        
         Dimensions['DT_prim_x'] = np.nan
         Dimensions['DT_prim_y'] = np.nan
         Dimensions['DT_sec_x'] = np.nan
@@ -181,8 +192,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time2 = time.time()
-    print('dune top calculation ' + str(Time2 - Time1) + ' seconds')
+    #Time2 = time.time()
+    #print('dune top calculation ' + str(Time2 - Time1) + ' seconds')
 
 #%%    
 ##################################
@@ -210,8 +221,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time3 = time.time()
-    print('MSL calculation ' + str(Time3 - Time2) + ' seconds')
+    #Time3 = time.time()
+    #print('MSL calculation ' + str(Time3 - Time2) + ' seconds')
 #%%
 ##################################
 ####   DEFINE MEAN LOW WATER  ####
@@ -249,8 +260,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time4 = time.time()
-    print('MLW calculation ' + str(Time4 - Time3) + ' seconds')  
+    #Time4 = time.time()
+    #print('MLW calculation ' + str(Time4 - Time3) + ' seconds')  
 #%%
 ##################################
 ####  DEFINE MEAN HIGH WATER  ####
@@ -287,8 +298,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time5 = time.time()
-    print('MHW calculation ' + str(Time5 - Time4) + ' seconds')    
+    #Time5 = time.time()
+    #print('MHW calculation ' + str(Time5 - Time4) + ' seconds')    
 #%%
 ###################################
 ####CALCULATE INTERTIDAL WIDTH ####
@@ -324,8 +335,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
         # add info on landward boundary to dataframe
         Dimensions['landward_stable_x'] = stable_x
         
-        Time6 = time.time()
-        print('landward point calculation ' + str(Time6 - Time5) + ' seconds')  
+        #Time6 = time.time()
+        #print('landward point calculation ' + str(Time6 - Time5) + ' seconds')  
         
         ####  Derivative method - E.D. ####
         ###################################
@@ -470,13 +481,42 @@ for idx in ids_filtered: # For each available transect go though the entire anal
                     # Get most seaward point where the above condition is True
                     if sum(dunefoot) != 0:
                         dunefoot_idx = np.where(dunefoot == True)[0][0]
-                        Dimensions.loc[yr, 'DF_der_y'] = cross_shore[dunefoot_idx]
-                        Dimensions.loc[yr, 'DF_der_x'] = y_all[dunefoot_idx, i]
-    else:
+                        Dimensions.loc[yr, 'DF_der_x'] = cross_shore[dunefoot_idx]
+                        Dimensions.loc[yr, 'DF_der_y'] = y_all[dunefoot_idx, i]
+                    
+        ####  Pybeach methods ####
+        ###################################
+        Dimensions['DF_pybeach_mix_y'] = np.nan
+        Dimensions['DF_pybeach_mix_x'] = np.nan
+        
+        for i, yr in enumerate(years_requested_str):
+            if yr in years_available:
+                
+                # Get seaward boundary
+                seaward_x = Dimensions.loc[yr, 'MHW_x_fix']
+                # Get landward boundary 
+                landward_x = Dimensions.loc[yr, 'DT_prim_x']   
+    
+                # Give nan values to everything outside of boundaries
+                index_domain = [x_ind for x_ind,x_val in enumerate(cross_shore) if x_val < seaward_x and x_val > landward_x]
+                
+                if len(index_domain) == 0:
+                    continue
+                else:
+                    x_ml = np.array([cross_shore[ind] for ind in index_domain]) # pybeach asks ndarray, so convert with np.array() and land-left, sea-right so use np.flip()
+                    y_ml = y_all[:,i]                  
+                    y_ml = np.array([y_ml[ind] for ind in index_domain]) 
+                                      
+                    p = Profile(x_ml, y_ml)
+                    toe_ml, prob_ml = p.predict_dunetoe_ml('mixed_clf')  # predict toe using machine learning model
+                    
+                    Dimensions.loc[yr, 'DF_pybeach_mix_y'] = y_ml[toe_ml[0]]
+                    Dimensions.loc[yr, 'DF_pybeach_mix_x'] = x_ml[toe_ml[0]]
+                
         pass
     
-    Time7 = time.time()
-    print('dune foot ' + str(Time7 - Time6) + ' seconds')   
+    #Time7 = time.time()
+    #print('dune foot ' + str(Time7 - Time6) + ' seconds')   
 #%%    
 ###################################  
 ###      CALC BEACH WIDTH       ###
@@ -487,12 +527,13 @@ for idx in ids_filtered: # For each available transect go though the entire anal
         
         Dimensions['BW_fix'] = Dimensions['MSL_x'] - Dimensions['DF_fix_x']
         Dimensions['BW_var'] = B_seaward_var - Dimensions['DF_fix_x']
-        Dimensions['BW_der'] = Dimensions['MSL_x'] - Dimensions['DF_der_x']       
+        Dimensions['BW_der'] = Dimensions['MSL_x'] - Dimensions['DF_der_x'] 
+        Dimensions['BW_der_var'] = B_seaward_var - Dimensions['DF_der_x'] 
     else:
         pass
     
-    Time8 = time.time()
-    print('beach width calculation ' + str(Time8 - Time7) + ' seconds')   
+    #Time8 = time.time()
+    #print('beach width calculation ' + str(Time8 - Time7) + ' seconds')   
 #%%    
 ###################################  
 ###     CALC BEACH GRADIENT     ###
@@ -504,8 +545,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time9 = time.time()
-    print('beach gradient calculation ' + str(Time9 - Time8) + ' seconds')   
+    #Time9 = time.time()
+    #print('beach gradient calculation ' + str(Time9 - Time8) + ' seconds')   
 
 #%%    
 ###################################  
@@ -519,8 +560,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
         Dimensions['DFront_der_sec_W'] = Dimensions['DF_der_x'] - Dimensions['DT_sec_x']    
     else:
         pass
-    Time10 = time.time()
-    print('dune width calculation ' + str(Time10 - Time9) + ' seconds')   
+    #Time10 = time.time()
+    #print('dune width calculation ' + str(Time10 - Time9) + ' seconds')   
     
 #%%    
 ###################################  
@@ -528,14 +569,14 @@ for idx in ids_filtered: # For each available transect go though the entire anal
 ###################################
     if dune_gradient == True:
         Dimensions['DFront_fix_prim_grad'] = get_gradient(cross_shore, y_all, years_requested, Dimensions['DF_fix_x'], Dimensions['DT_prim_x'])
-        #Dimensions['DFront_der_prim_grad'] = get_gradient(cross_shore, y_all, years_requested, Dimensions['DF_der_x'], Dimensions['DT_prim_x'])
+        Dimensions['DFront_der_prim_grad'] = get_gradient(cross_shore, y_all, years_requested, Dimensions['DF_der_x'], Dimensions['DT_prim_x'])
         Dimensions['DFront_fix_sec_grad'] = get_gradient(cross_shore, y_all, years_requested, Dimensions['DF_fix_x'], Dimensions['DT_sec_x'])
-        #Dimensions['DFront_der_sec_grad'] = get_gradient(cross_shore, y_all, years_requested, Dimensions['DF_der_x'], Dimensions['DT_sec_x'])
+        Dimensions['DFront_der_sec_grad'] = get_gradient(cross_shore, y_all, years_requested, Dimensions['DF_der_x'], Dimensions['DT_sec_x'])
     else:
         pass
     
-    Time11 = time.time()
-    print('dune gradient calculation ' + str(Time11 - Time10) + ' seconds')  
+    #Time11 = time.time()
+    #print('dune gradient calculation ' + str(Time11 - Time10) + ' seconds')  
 
 #%%    
 ###################################
@@ -543,12 +584,12 @@ for idx in ids_filtered: # For each available transect go though the entire anal
 ###################################
     if dune_volume == True:
         Dimensions['DVol_fix'] = get_volume(cross_shore, y_all, years_requested, Dimensions['DF_fix_x'], Dimensions['landward_stable_x'])
-        Dimensions['DVol_der'] = get_volume(cross_shore, y_all, years_requested, Dimensions['DF_der_x'], Dimensions['landward_stable_x']) 
+        Dimensions['DVol_der'] = get_volume(cross_shore, y_all, years_requested, Dimensions['DF_der_x'], Dimensions['landward_stable_x'])
     else:
         pass
     
-    Time12 = time.time()
-    print('dune volume calculation ' + str(Time12 - Time11) + ' seconds')   
+    #Time12 = time.time()
+    #print('dune volume calculation ' + str(Time12 - Time11) + ' seconds')   
     
 #%%    
 ###################################
@@ -559,8 +600,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time13 = time.time()
-    print('intertidal gradient calculation ' + str(Time13 - Time12) + ' seconds')  
+    #Time13 = time.time()
+    #print('intertidal gradient calculation ' + str(Time13 - Time12) + ' seconds')  
 
 #%%    
 ###################################
@@ -572,8 +613,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time14 = time.time()
-    print('intertidal volume calculation ' + str(Time14 - Time13) + ' seconds')   
+    #Time14 = time.time()
+    #print('intertidal volume calculation ' + str(Time14 - Time13) + ' seconds')   
 
 #%%    
 ###################################
@@ -584,8 +625,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time15 = time.time()
-    print('foreshore gradient calculation ' + str(Time15 - Time14) + ' seconds')  
+    #Time15 = time.time()
+    #print('foreshore gradient calculation ' + str(Time15 - Time14) + ' seconds')  
 
 #%%    
 ###################################
@@ -596,8 +637,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time16 = time.time()
-    print('foreshore volume calculation ' + str(Time16 - Time15) + ' seconds')  
+    #Time16 = time.time()
+    #print('foreshore volume calculation ' + str(Time16 - Time15) + ' seconds')  
 
 #%%
 ###################################
@@ -608,8 +649,8 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time17 = time.time()
-    print('active profile gradient calculation ' + str(Time17 - Time16) + ' seconds')  
+    #Time17 = time.time()
+    #print('active profile gradient calculation ' + str(Time17 - Time16) + ' seconds')  
     
 #%%    
 ###################################
@@ -621,13 +662,13 @@ for idx in ids_filtered: # For each available transect go though the entire anal
     else:
         pass
     
-    Time18 = time.time()
-    print('active profile volume calculation ' + str(Time18 - Time17) + ' seconds')  
+    #Time18 = time.time()
+    #print('active profile volume calculation ' + str(Time18 - Time17) + ' seconds')  
     
     
-    end = time.time()
-    time_elapsed = str(end-start)
-    print('Elapsed time for transect ' + trsct + ' is ' + time_elapsed + ' seconds')
+    #end = time.time()
+    #time_elapsed = str(end-start)
+    #print('Elapsed time for transect ' + trsct + ' is ' + time_elapsed + ' seconds')
 
 #%%    
 ###################################

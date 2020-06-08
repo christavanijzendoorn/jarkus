@@ -8,46 +8,38 @@ Created on Mon Oct 21 09:49:55 2019
 ##################################
 ####         PACKAGES         ####
 ##################################
+import json
 from jarkus.transects import Transects
 import pickle
 import matplotlib.pyplot as plt
-
-## %matplotlib auto TO GET WINDOW FIGURE
+from IPython import get_ipython
+get_ipython().run_line_magic('matplotlib', 'auto') ## %matplotlib auto TO GET WINDOW FIGURE
 
 ##################################
 ####      INITIALISATION      ####
 ##################################
-
-Dir_per_transect = "C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Figures/Dataframes_per_transect/"
-Dir_plots_per_transect = "C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Figures/Dimensions_per_transect/"
+# load basic settings from .txt file
+with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Settings.txt") as file:
+    settings = json.load(file)
+    
+Dir_per_transect = settings['Dir_B']
+Dir_plots_per_transect = settings['Dir_B2']
 
 years_requested = list(range(1965, 2020))
 years_requested_str = [str(yr) for yr in years_requested]
 
 # Collect the JARKUS data from the server
-#Jk = Transects(url='http://opendap.deltares.nl/thredds/catalog/opendap/rijkswaterstaat/jarkus/profiles/catalog.html?dataset=varopendap/rijkswaterstaat/jarkus/profiles/transect_r20190731.nc')
-Jk = Transects(url='https://opendap.tudelft.nl/thredds/dodsC/data2/deltares/rijkswaterstaat/jarkus/profiles/transect_r20180914.nc')
-
+Jk = Transects(url= settings['url'])
 ids = Jk.get_data('id') # ids of all available transects
 
-remove1 = list(range(2000303,2000304))
-remove2 = list(range(2000720,2000721))
-remove3 = list(range(2002019,2002020))
-remove4 = list(range(4002001,4005917,1))
-remove5 = list(range(5003300,5004000,1))
-remove6 = list(range(6000416,6000900,1))
-remove7 = list(range(6003070,6003453,1))
-remove8 = list(range(8000000,8005626,1))
-remove9 = list(range(9010193,9010194,1))
-remove10 = list(range(10000000,10001411,1))
-remove11 = list(range(11000660,11000661,1))
-remove12 = list(range(11000680,11000681,1))
-remove13 = list(range(11000700,11000841,1))
-remove14 = list(range(14000000,14000700,1))
+with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Filter.txt") as file:
+    filter_transects = json.load(file)
 
-remove_all = remove1 + remove2 + remove3 + remove4 + remove5 + remove6 + remove7 + remove8 + remove9 + remove10 + remove11 + remove12 + remove13 + remove14
+filter_all = []
+for key in filter_transects:
+    filter_all += list(range(int(filter_transects[key]["begin"]), int(filter_transects[key]["eind"])))
 
-ids_filtered = [x for x in ids if x not in remove_all]
+ids_filtered = [x for x in ids if x not in filter_all]
         
 ###################################
 ####         VISUALIZE         ####

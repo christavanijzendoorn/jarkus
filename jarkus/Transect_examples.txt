@@ -1,0 +1,21 @@
+EXAMPLES of TRANSECTS
+17_Zeeuws-Vlaanderen = 17000011 - 17001487
+16_Vrouwenpolder - Vlissingen = 16000540 - 16003750
+15_Noord-Beveland = 15000000 - 15000520
+13_Westenschouwen = 13001196 - 13001548 - 13001800
+13_Schouwen-Duiveland = 13000074 - 13001800
+12_Goeree-Overflakkee = 12000280 - 12002525
+11_Voorne-Putten = 11000400 - 11001830
+09_Zandmotor = 9010592 - 9010883 - 9011221
+09_Den Haag - Hoek van Holland = 9009740 - 9011850
+08_IJmuiden - Scheveningen = 8005650 - 8009725
+08_Meijendel = 8009300 - 8009750
+07_Schoorlse Duinen - Velsen = 7002629 - 7005500
+07_Hondsbossche = 7002041 - 7002606
+07_Den Helder - Petten = 7000000 - 7002023
+
+06_Texel = 6000900 - 6003070
+05_Vlieland = 5004000 - 5005480
+04_Terschelling = 4000000 - 4002600
+03_Ameland = 3000100 - 3004966
+02_Schiermonnikoog = 2000101 - 2002019

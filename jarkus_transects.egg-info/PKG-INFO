@@ -1,0 +1,32 @@
+Metadata-Version: 1.1
+Name: jarkus-transects
+Version: 0.1.0
+Summary: Python wrapper for JARKUS transect NetCDF file
+Home-page: UNKNOWN
+Author: Kees den Heijer
+Author-email: Kees.denHeijer@deltares.nl
+License: GPL
+Description: [![Build Status](https://travis-ci.org/openearth/jarkus.svg?branch=master)](https://travis-ci.org/openearth/jarkus)
+        
+        [![Requirements Status](https://requires.io/github/openearth/jarkus/requirements.svg?branch=master)](https://requires.io/github/openearth/jarkus/requirements/?branch=master)
+        
+        # jarkus
+        python toolbox for jarkus data (yearly coastal measurements).
+        
+        ## Install jarkus package
+        You can install **jarkus** package via command line using `pip`.
+        ```console
+        pip install git+https://github.com/openearth/jarkus.git
+        ```
+        
+Keywords: JARKUS,Bathymetry,Topography
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Text Processing :: Markup :: LaTeX
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: License :: General Public License (GPL)
+Classifier: Programming Language :: Python :: 3
