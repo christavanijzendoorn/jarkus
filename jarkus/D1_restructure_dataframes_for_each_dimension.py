@@ -119,6 +119,9 @@ for i in range(len(variables)):
 #### VARIABLE NORMALISATION  ####
 ##################################
 
+# Each cross-shore dimension is normalized based on the x-location of the MSL in 1999.
+# This is done to remove unnecessary variations from the distribution plot, making it more readable
+
 def get_normalisation_value(variable, year, dir_per_dimension): # Get norm values for the cross-shore location for each transect in the norm year
     
     pickle_file = dir_per_dimension + variable + '_dataframe.pickle'
