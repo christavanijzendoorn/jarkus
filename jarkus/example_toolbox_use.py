@@ -9,6 +9,8 @@ Created on Wed Jun 10 17:24:40 2020
 # PACKAGES
 ######################
 import json
+import os
+import pickle
 import numpy as np
 import pandas as pd
 import Jarkus_Analysis_Toolbox as TB
@@ -26,15 +28,17 @@ with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Settings.txt")
 DirJarkus = settings['Dir_Jarkus']
 DirPlots = settings['Dir_A']
 DirDataframes = settings['Dir_B']
+DirDimensions = settings['Dir_D1']
+DirVarPlots = settings['Dir_D2']
 
 ######################
 # USER-DEFINED REQUEST
 ######################
-start_yr = 1965                                                                 # USER-DEFINED request for years
+start_yr = 1965                                                                # USER-DEFINED request for years
 end_yr = 2020
-#trscts_requested = 8009325
+trscts_requested = 2000303
 #trscts_requested = [8009325, 8009350]
-trscts_requested = np.arange(8009000, 8009751, 1)                               # USER-DEFINED request for transects
+#trscts_requested = np.arange(8009000, 8009751, 1)                               # USER-DEFINED request for transects
 
 # Set whether all transect should be analysed or define a retrieval request
 execute_all_transects = True
@@ -107,7 +111,7 @@ with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Filter.txt") a
         filter_transects = json.load(file)
         
 ######################
-# VISUALISATION
+# TRSCT FILTERING
 ######################
         
 if execute_all_transects == False:
@@ -115,21 +119,15 @@ if execute_all_transects == False:
     trscts_filtered, trscts_filtered_idxs = TB.get_transects_filtered(trscts_requested, variables)
 else:
     trscts_requested = variables['id'].values
+    trscts_filtered, trscts_filtered_idxs = TB.get_transects_filtered(trscts_requested, variables)
     
-    # Filter out location that are not suitable for analysis. Based on Kustlijnkaarten 2019, RWS.
-    with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Filter.txt") as file:
-        filter_transects = json.load(file)
-    
-    filter_all = []
-    for key in filter_transects:
-        filter_all += list(range(int(filter_transects[key]["begin"]), int(filter_transects[key]["eind"])))
-        
-    # Use this if you want to skip transects, e.g. if your battery died during running...
-    skip_transects = list(trscts_requested[0:1643])
-    filter_all = filter_all + skip_transects
-    
-    trscts_filtered = [x for x in trscts_requested if x not in filter_all]
-    trscts_filtered_idxs = [idx for idx, x in enumerate(trscts_requested) if x not in filter_all]
+    # # Use this if you want to skip transects, e.g. if your battery died during running...
+    # trscts_filtered = trscts_filtered[1185:]
+    # trscts_filtered_idxs = trscts_filtered_idxs[1185:]
+#%%
+######################
+# LOOPING through TRSCTS
+######################
 
 for i, trsct in enumerate(trscts_filtered):
     print(trsct)
@@ -150,11 +148,26 @@ for i, trsct in enumerate(trscts_filtered):
     df.set_index('year', inplace=True)
     #df_1965 = df[1965]
     
+######################
+# VISUALISATION
+######################
+    
     # saves plots of all yearly profiles of specific transect
     TB.get_transect_plot(elevation_dataframe, trsct, DirPlots)
     
-    dimensions = pd.DataFrame({'transect': trsct, 'years':elevation_dataframe.index})
-    dimensions.set_index('years', inplace=True)
+######################
+# DIMENSION EXTRACTION
+######################
+    
+    trsct = str(trsct)
+    file_name = 'Transect_' + trsct + '_dataframe.pickle'
+    pickle_file = DirDataframes + file_name
+    
+    if file_name in os.listdir(DirDataframes):
+        dimensions = pickle.load(open(pickle_file, 'rb')) #load pickle of dimension    
+    else:
+        dimensions = pd.DataFrame({'transect': trsct, 'years':elevation_dataframe.index})
+        dimensions.set_index('years', inplace=True)
     
     # extract dimensions
     dimensions = TB.get_dune_height_and_location(dune_height_and_location, elevation_dataframe, dimensions)
@@ -212,12 +225,89 @@ for i, trsct in enumerate(trscts_filtered):
     dimensions = TB.get_active_profile_gradient(active_profile_gradient, elevation_dataframe, dimensions)
     dimensions = TB.get_active_profile_volume(active_profile_volume, elevation_dataframe, dimensions)
     
-    #%%    
-    ###################################
-    ###        SAVE DATAFRAME       ### 
-    ###################################
+######################
+# SAVE DATAFRAME
+######################
     
     TB.save_dimensions_dataframe(dimensions, DirDataframes)
+    
+# END OF LOOP
+
+#%%
+######################
+# CREATE VARIABLE DF
+######################
+import pickle
+
+trsct = 7000000
+pickle_file = DirDataframes + 'Transect_' + str(trsct) + '_dataframe.pickle'
+dimensions = pickle.load(open(pickle_file, 'rb')) #load pickle of dimension   
+
+variables = list(dimensions.columns)
+variables = ['Dunefoot_x_pybeach_mix', 'Dunefoot_y_pybeach_mix']
+
+# Convert dataframes with variables per transect to dataframes with values per transect for each variable
+for i in range(len(variables)):    
+    TB.extract_variable(variables[i], DirDataframes, DirDimensions, trscts_filtered, start_yr, end_yr)
+
+######################
+# NORMALIZE VARIABLES
+######################
+
+# Each cross-shore dimension is normalized based on the x-location of the MSL in 1999.
+# This is done to remove unnecessary variations from the distribution plot, making it more readable
+norm_variable = 'MSL_x'
+norm_year = 1999
+
+normalized_variables = TB.normalize_variables(DirDimensions, variables, norm_variable, norm_year)
+
+#%%
+######################
+# VARIABLE PLOTS
+######################
+import os
+import pickle
+import matplotlib.pyplot as plt
+
+trsct = 2000100
+pickle_file = DirDataframes + 'Transect_' + str(trsct) + '_dataframe.pickle'
+dimensions = pickle.load(open(pickle_file, 'rb')) #load pickle of dimension    
+
+variables = list(dimensions.columns)
+
+trscts_vis = trscts_filtered
+
+years_requested = list(range(start_yr, end_yr))
+labels_y = [str(yr) for yr in years_requested][0::5]
+labels_x = [str(tr) for tr in trscts_filtered][0::25]
+
+for i, var in enumerate(variables):
+    print(var)
+    pickle_file = DirDimensions + variables[i] + '_dataframe.pickle'    
+    if os.path.exists(pickle_file):
+        variable_df = pickle.load(open(pickle_file, 'rb')) #load pickle of dimension    
+        plt.figure(figsize=(30,15))
+        average = np.nanmean(variable_df[trscts_vis].values)
+        stddev = np.nanstd(variable_df[trscts_vis].values, ddof=1)
+        range_value = 2*stddev
+        fig = plt.pcolor(variable_df[trscts_vis], vmin = average-range_value, vmax = average + range_value)
+        plt.title(settings[var])
+        ticks_y = range(0, len(years_requested))[0::5]
+        ticks_x = range(0, len(trscts_vis))[0::25]
+        plt.yticks(ticks_y, labels_y)
+        plt.xticks(ticks_x, labels_x, rotation='vertical')
+        plt.colorbar()
+        plt.savefig(DirVarPlots + var + '_plot.png')
+        pickle.dump(fig, open(DirVarPlots + var + '_plot.fig.pickle', 'wb'))
+        
+        #plt.show()
+        plt.close()
+    
+    #set(ax, 'YTickLabel', years_requested)
+    else:
+        print(pickle_file + ' was not available.')
+        continue
+    
 
 # REOPEN FIGURE EXAMPLE
 
