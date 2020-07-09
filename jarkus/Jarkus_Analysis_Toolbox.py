@@ -194,9 +194,64 @@ def elevation_filter(elev_dataframe, min_elev, max_elev):
 
 def get_elevations_dataframe(df, min_elev, max_elev):
     elev_dataframe = df.pivot(index='year', columns='crossshore', values='altitude')
-    elev_dataframe_filtered = elevation_filter(elev_dataframe, min_elev, max_elev)
+#    elev_dataframe_filtered = elevation_filter(elev_dataframe, min_elev, max_elev)
     
-    return elev_dataframe_filtered
+    return elev_dataframe#_filtered
+
+def extract_variable(variable, DirDataframes, DirDimensions, transects_requested, start_year, end_year):
+    import os
+    import pickle
+    
+    years_requested = list(range(start_year, end_year))
+    Variable_dataframe = pd.DataFrame({'years': years_requested})
+    Variable_dataframe.set_index('years', inplace=True)
+    for trsct in transects_requested:
+        pickle_file = DirDataframes + 'Transect_' + str(trsct) + '_dataframe.pickle'
+        Variable_dataframe[trsct] = np.nan
+        
+        if os.path.exists(pickle_file):
+            dimensions_df = pickle.load(open(pickle_file, 'rb')) #load pickle of transect
+            if variable not in dimensions_df.columns:
+                Variable_dataframe.loc[trsct] = np.nan
+            else:
+                for yr, row in dimensions_df.iterrows(): 
+                    Variable_dataframe.loc[yr, trsct] = dimensions_df.loc[yr, variable] #extract column that corresponds to the requested variable
+            print('Extracted transect ' + str(trsct) + ' for variable ' + variable)
+                
+        else:
+            pass
+    
+    Variable_dataframe.to_pickle(DirDimensions + variable + '_dataframe' + '.pickle')
+    #print(Variable_dataframe)
+    print('The dataframe of ' + variable + ' was saved')
+    
+    return Variable_dataframe
+
+def normalize_variables(DirDimensions, variables, norm_variable, norm_year):
+    
+    import pickle
+    
+    # Get all variables that have to be normalized based on the requirement that _x should be in the column name, 
+    # and that change values do not have to be normalized.
+    normalized_variables = [var for var in variables if '_x' in var and 'change' not in var]
+    
+    pickle_file = DirDimensions + norm_variable + '_dataframe.pickle'
+    norm_variable_df = pickle.load(open(pickle_file, 'rb')) #load pickle of dimensions   
+    normalization_values = norm_variable_df.loc[norm_year] 
+    
+    for i, var in enumerate(normalized_variables):      
+        pickle_file = DirDimensions + var + '_dataframe.pickle'
+        dimensions_df = pickle.load(open(pickle_file, 'rb')) #load pickle of dimensions   
+        normalized_df = dimensions_df.copy()
+        
+        for trsct in normalized_df.columns:
+            # Get norm value for the cross-shore location in the norm year and subtract that from the values of the variable for each transect
+            normalized_df[trsct] = normalized_df[trsct] - normalization_values.loc[trsct] 
+        
+        normalized_df.to_pickle(DirDimensions + var + '_normalized_dataframe' + '.pickle')
+        print('The dataframe of ' + var + ' was normalized and saved')
+    
+    return normalized_variables
 
 #################################
 ####    ANALYSIS FUNCTIONS   ####
@@ -488,7 +543,7 @@ def get_landwardpoint_derivative(landward_point_derivative, elev_dataframe, dime
             if len(peaks_df) != 0 and peaks_df.values.max() > height_constraint:
                 intersections_derivative = find_intersections(row, height_constraint)
                 if len(intersections_derivative) != 0:
-                    dimensions_df.loc[yr, 'Landward_der_x'] = intersections_derivative[-1]
+                    dimensions_df.loc[yr, 'Landward_x_der'] = intersections_derivative[-1]
             elif len(peaks_df_filt) != 0:
                 dimensions_df.loc[yr, 'Landward_x_der'] = peaks_df_filt.index[-1]
             else:
@@ -571,7 +626,7 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
         
         for yr, row in elev_dataframe.iterrows(): 
             # Get seaward boundary
-            seaward_x = dimensions_df['MHW_x_fix'].values[0]
+            seaward_x = dimensions_df['MHW_x_var'].values[0]
             # Get landward boundary 
             landward_x = dimensions_df.loc[yr, 'Landward_x_der']   
         
@@ -579,7 +634,8 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
             row = row.drop(row.index[row.index > seaward_x]) # drop everything seaward of seaward boundary
             row = row.drop(row.index[row.index < landward_x]).interpolate() # drop everything landward of landward boundary and interpolate remaining data
             
-            if len(row) != 0:
+            if len(row) > 1:
+                print(row)
                 # Get first derivative
                 y_der1_index = row.index
                 y_der1 = np.gradient(row.values, y_der1_index)  
@@ -593,8 +649,8 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
                 
                 if len(zero_sec1) != 0:
                     # The profile seaward of and including the most landward sequence of zeroes is deleted
-                    y_der1 = np.array_split(y_der1, zero_sec1[0,0])[0]
-                    y_der1_index = np.array_split(row.index, zero_sec1[0,0])[0]
+                    y_der1 = y_der1[:zero_sec1[0,0]]
+                    y_der1_index = row.index[:zero_sec1[0,0]]
                 
                 # Get second derivative
                 y_der2 = np.gradient(y_der1, y_der1_index)    
@@ -651,11 +707,11 @@ def get_dune_foot_pybeach(dune_foot_pybeach, elev_dataframe, dimensions_df):
                 p = Profile(x_ml, y_ml)
                 toe_ml, prob_ml = p.predict_dunetoe_ml('mixed_clf')  # predict toe using machine learning model
                 
-                dimensions_df.loc[yr, 'Dunefoot_pybeach_mix_y'] = y_ml[toe_ml[0]]
-                dimensions_df.loc[yr, 'Dunefoot_pybeach_mix_x'] = x_ml[toe_ml[0]]
+                dimensions_df.loc[yr, 'Dunefoot_y_pybeach_mix'] = y_ml[toe_ml[0]]
+                dimensions_df.loc[yr, 'Dunefoot_x_pybeach_mix'] = x_ml[toe_ml[0]]
             else:
-                dimensions_df.loc[yr, 'Dunefoot_pybeach_mix_y'] = np.nan
-                dimensions_df.loc[yr, 'Dunefoot_pybeach_mix_x'] = np.nan
+                dimensions_df.loc[yr, 'Dunefoot_y_pybeach_mix'] = np.nan
+                dimensions_df.loc[yr, 'Dunefoot_x_pybeach_mix'] = np.nan
                 
     return dimensions_df
 
