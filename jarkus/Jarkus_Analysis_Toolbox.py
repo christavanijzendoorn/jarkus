@@ -22,9 +22,6 @@ Stevinweg 1
 The Netherlands
 '''
 
-# This script was created to try and build a simpler version of the already existing Jarkus Transects python toolbox. Work in progress....
-
-# -*- coding: utf-8 -*-
 """
 Created on Tue Nov 19 11:31:25 2019
 
@@ -144,15 +141,18 @@ def get_transect_plot(df, trsct, dirplots):
     jet = plt.get_cmap('jet') 
     cNorm  = colors.Normalize(vmin=min(years), vmax=max(years))
     scalarMap = cm.ScalarMappable(norm=cNorm, cmap=jet)    
-    
+       
     # Load and plot data per year
     for i, yr in enumerate(years):
         colorVal = scalarMap.to_rgba(yr)
-        df.loc[yr].plot(color=colorVal, label = str(yr), linewidth = 2.5)
+        crossshore = df.iloc[i].index
+        elevation = df.iloc[i].values
+        mask = np.isfinite(elevation)
+        plt.plot(crossshore[mask], elevation[mask], color=colorVal, label = str(yr), linewidth = 2.5)
     
     # Added this to get the legend to work
     handles,labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, loc='lower left',ncol=2, fontsize = 20)
+    ax.legend(handles, labels, loc='upper right',ncol=2, fontsize = 20)
     
     # Label the axes and provide a title
     ax.set_title("Transect {}".format(str(trsct)), fontsize = 28)
@@ -160,8 +160,8 @@ def get_transect_plot(df, trsct, dirplots):
     ax.set_ylabel("Elevation [m to datum]", fontsize = 24)
     
     # Set x and y limit of plots - Leave lists empty (i.e. []) for automatic axis limits
-    xlim = [-200,500] # EXAMPLE: [-400,1000]
-    ylim = [-10, 25] # EXAMPLE: [-10,22]
+    xlim = [] # EXAMPLE: [-400,1000]
+    ylim = [] # EXAMPLE: [-10,22]
     if len(xlim) != 0:
         ax.set_xlim(xlim)
     if len(ylim) != 0:
@@ -194,9 +194,8 @@ def elevation_filter(elev_dataframe, min_elev, max_elev):
 
 def get_elevations_dataframe(df, min_elev, max_elev):
     elev_dataframe = df.pivot(index='year', columns='crossshore', values='altitude')
-#    elev_dataframe_filtered = elevation_filter(elev_dataframe, min_elev, max_elev)
     
-    return elev_dataframe#_filtered
+    return elev_dataframe
 
 def extract_variable(variable, DirDataframes, DirDimensions, transects_requested, start_year, end_year):
     import os
@@ -285,12 +284,19 @@ def get_gradient(elev_dataframe, dimensions_df, seaward_bound, landward_bound):
         # Calculate gradient for domain
         if sum(row.index) == 0:
             gradient.append(np.nan)
+        elif pd.isnull(seaward_x) or pd.isnull(landward_x):
+            gradient.append(np.nan)
+        elif pd.isnull(row.first_valid_index()) or pd.isnull(row.last_valid_index()):
+            gradient.append(np.nan)  
+        elif row.first_valid_index() > landward_x or row.last_valid_index() < seaward_x:
+            gradient.append(np.nan)
         else:
             gradient.append(np.polyfit(row.index, row.values, 1)[0])    
             
     return gradient
 
 def get_volume(elev_dataframe, dimensions_df, seaward_bound, landward_bound):
+    from scipy import integrate
     volume = []
     for yr, row in elev_dataframe.iterrows(): 
         
@@ -299,16 +305,24 @@ def get_volume(elev_dataframe, dimensions_df, seaward_bound, landward_bound):
         # Get landward boundary 
         landward_x = np.floor(dimensions_df.loc[yr, landward_bound] )
         
-        if np.isnan(seaward_x) or np.isnan(landward_x):
+        if pd.isnull(seaward_x) == True or pd.isnull(landward_x) == True:
+            volume.append(np.nan)
+        elif pd.isnull(row.first_valid_index()) == True or pd.isnull(row.last_valid_index()) == True:
+            volume.append(np.nan)    
+        elif row.first_valid_index() > landward_x or row.last_valid_index() < seaward_x:
             volume.append(np.nan)
         else:
             # Remove everything outside of boundaries
             row = row.drop(row.index[row.index > seaward_x]) # drop everything seaward of seaward boundary
             row = row.drop(row.index[row.index < landward_x]).interpolate() # drop everything landward of landward boundary and interpolate remaining data
-            volume_y = row - row.min()
             
-            volume_trapz = np.trapz(volume_y, x = volume_y.index)
-            volume.append(volume_trapz)
+            if row.empty == False:
+                volume_y = row - row.min()
+                # volume_trapz = np.trapz(volume_y, x = volume_y.index)
+                volume_simps = integrate.simps(volume_y, x = volume_y.index)
+                volume.append(volume_simps)
+            else:
+                volume.append(np.nan)
     
     return volume
 
@@ -598,6 +612,58 @@ def get_seawardpoint_activeprofile(seaward_point_activeprofile, elev_dataframe, 
     
     return dimensions_df
 
+def get_seawardpoint_depthofclosure(seaward_point_doc, elev_dataframe, dimensions_df):
+    if seaward_point_doc == True:    
+        
+        # Gives most seaward cross-shore location where where depth is -5.0 m NAP
+        min_depth = -5.0
+    
+        for yr, row in elev_dataframe.iterrows(): 
+            intersections_mindepth = find_intersections(row, min_depth)
+            if len(intersections_mindepth) != 0:
+                dimensions_df.loc[yr, 'Seaward_x_mindepth'] = intersections_mindepth[-1]
+            else:
+                dimensions_df.loc[yr, 'Seaward_x_mindepth'] = np.nan
+                
+        # Gives locations seaward of minimal seaward boundary at -5.0m NAP
+        offshore = elev_dataframe.columns[elev_dataframe.columns > dimensions_df['Seaward_x_mindepth'].max()]
+        
+        ####  Method by Hinton (2000) - based on coding by N.C. Zwarenstein Tutunji ####
+        stdThr = 0.25 # standard deviation threshold, dependent on area and range of years!
+        lowstd_length = 200 # the average standard deviation of a section with this length has to be below the threshold
+        stdv_y = elev_dataframe[offshore].std()
+        
+        # # Gives locations where stddev is below threshold, and stays below threshold seaward at 50, 100 and 150 m distance
+        # stable_points = []
+        # for i, std in stdv_y.items():
+        #     if i+150 >= stdv_y.index[-1]:
+        #         continue
+        #     elif std < stdThr and stdv_y.loc[i+50] < stdThr and stdv_y.loc[i+100] < stdThr and stdv_y.loc[i+150] < stdThr:
+        #         stable_points.append(i)
+        
+        # Gives locations where stddev is on average below threshold for a stretch of 200m
+        window_size = lowstd_length
+        stable_points = []
+        for x_val in offshore:
+            if x_val < max(stdv_y.index) - window_size + 5:
+                this_window = stdv_y[x_val:x_val+window_size]
+                window_average = np.nanmean(this_window)
+                if window_average < stdThr and stdv_y[x_val] < stdThr:
+                    stable_points.append(x_val)
+                
+        try: 
+            # Get most seaward stable point that is seaward of the minimal depth of -5.0 m NAP, has an average stddev below threshold 200m seaward and is itself below the threshold
+            #stable_point = np.intersect1d(stable_points, offshore)[-1]
+            stable_point = stable_points[0]
+        except:
+            print("No stable point found")
+            stable_point = np.nan
+        
+        # add info on landward boundary to dataframe
+        dimensions_df['Seaward_x_DoC'] = stable_point
+    
+    return dimensions_df
+
 def get_dune_foot_fixed(dune_foot_fixed, elev_dataframe, dimensions_df):
     if dune_foot_fixed == True:
         
@@ -626,7 +692,7 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
         
         for yr, row in elev_dataframe.iterrows(): 
             # Get seaward boundary
-            seaward_x = dimensions_df['MHW_x_var'].values[0]
+            seaward_x = dimensions_df.loc[yr, 'MHW_x_var']
             # Get landward boundary 
             landward_x = dimensions_df.loc[yr, 'Landward_x_der']   
         
@@ -635,14 +701,14 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
             row = row.drop(row.index[row.index < landward_x]).interpolate() # drop everything landward of landward boundary and interpolate remaining data
             
             if len(row) > 1:
-                print(row)
+                
                 # Get first derivative
                 y_der1_index = row.index
                 y_der1 = np.gradient(row.values, y_der1_index)  
                 # Set first derivative values between -0.001 and 0.001 to zero
-                for n in range(len(y_der1)):
-                    if abs(y_der1[n]) <= threshold_firstder:
-                        y_der1[n] = 0
+                for i, n in enumerate(y_der1):
+                    if ~np.isnan(n) and abs(n) <= threshold_firstder:
+                        y_der1[i] = 0
                 
                 # Get locations where long sequences of zeroes occur
                 zero_sec1 = zero_runs(y_der1, threshold_zeroes)
@@ -656,7 +722,10 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
                 y_der2 = np.gradient(y_der1, y_der1_index)    
             
                 # Set second derivative values above 0.01 to zero
-                y_der2[y_der2 < threshold_secondder] = 0
+                for i, n in enumerate(y_der2):
+                    if ~np.isnan(n) and abs(n) < threshold_secondder:    
+                        y_der2[i] = 0
+                #y_der2[y_der2 < threshold_secondder] = 0
                 
                 # Get locations where long sequences of zeroes occur
                 zero_sec2 = zero_runs(y_der2, threshold_zeroes)
@@ -666,7 +735,11 @@ def get_dune_foot_derivative(dune_foot_derivative, elev_dataframe, dimensions_df
                     y_der2[zero_sec2[0,0]:] = 0
                         
                 # Locations where 2nd derivative is above the threshold:
-                dunefoot_locs = y_der1_index[y_der2 > threshold_secondder]
+                dunefoot_locs = []
+                for i, n in enumerate(y_der2):
+                    if ~np.isnan(n) and abs(n) >= threshold_secondder:    
+                        dunefoot_locs.append(y_der1_index[i])
+                #dunefoot_locs = y_der1_index[y_der2 >= threshold_secondder]
                     
                 # Get most seaward point where the above condition is true
                 if len(dunefoot_locs) != 0:
@@ -692,9 +765,11 @@ def get_dune_foot_pybeach(dune_foot_pybeach, elev_dataframe, dimensions_df):
         for yr, row in elev_dataframe.iterrows(): 
                 
             # Get seaward boundary
-            seaward_x = dimensions_df['MHW_x_fix'].values[0]
+            seaward_x = dimensions_df.loc[yr, 'MHW_x_var']
             # Get landward boundary 
-            landward_x = dimensions_df.loc[yr, 'DuneTop_prim_x']     
+            landward_x = dimensions_df.loc[yr, 'Landward_x_der'] 
+            # Get landward boundary 
+            #landward_x = dimensions_df.loc[yr, 'DuneTop_prim_x']     
 
             # Remove everything outside of boundaries
             row = row.drop(row.index[row.index > seaward_x]) # drop everything seaward of seaward boundary
@@ -932,8 +1007,8 @@ def get_active_profile_volume(active_profile_volume, elev_dataframe, dimensions_
     if active_profile_volume == True:
         
         # dimensions used as landward and seaward boundary
-        seaward_bound = 'Seaward_x_AP'
-        landward_bound = 'Landward_x_bma'
+        seaward_bound = 'Seaward_x_DoC'
+        landward_bound = 'Landward_x_variance'
         
         dimensions_df['Active_profile_volume'] = get_volume(elev_dataframe, dimensions_df, seaward_bound, landward_bound)
     

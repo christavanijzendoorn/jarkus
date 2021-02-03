@@ -61,13 +61,13 @@ ids = Jk.get_data('id')
 execute_all_transects = False
 
 # Set which years should be analysed
-years_requested = list(range(2012, 2020))
+years_requested = list(range(1980, 1982))
 
 if execute_all_transects == False:
     # Set the transect and years for retrieval request
     transect_name   = "08_Meijendel"
     #transect_req = np.arange(8009325, 8009750, 1)
-    transect_req        = [8006050]
+    transect_req        = [8006300]
     idxs = np.isin(transect_req, ids) # check which transect are available of those that were requested
     ids_filtered = np.array(transect_req)[np.nonzero(idxs)[0]]
     Dir_plots = settings['Dir_figures'] + transect_name.replace(" ","") + "/"
@@ -91,8 +91,8 @@ else:
 ####   CREATE AND SAVE PLOTS  ####
 ##################################
 # Set x and y limit of plots - Leave lists empty (i.e. []) for automatic axis limits
-xlimit = [-200,100] # EXAMPLE: [-400,1000]
-ylimit = [-1, 25] # EXAMPLE: [-10,22]
+xlimit = [-2500,150] # EXAMPLE: [-400,1000]
+ylimit = [-10, 25] # EXAMPLE: [-10,22]
 
 years_requested_str = [str(yr) for yr in years_requested]
 

@@ -17,7 +17,8 @@ def multilineplot(x_data, y_data, time, title, x_label="", y_label="", xlim=[], 
     ax.tick_params(axis='y', labelsize=20)
     
     jet = plt.get_cmap('jet') 
-    cNorm  = colors.Normalize(vmin=min(time), vmax=max(time))
+    # cNorm  = colors.Normalize(vmin=min(time), vmax=max(time))
+    cNorm  = colors.Normalize(vmin=1965, vmax=2017)
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
     
 	# Load and plot data per year

@@ -59,17 +59,27 @@ ids = Jk.get_data('id')
 execute_all_transects = False
 
 # Set which years should be analysed
-years_requested = list(range(1970, 2005, 5))
+years_requested = list(range(1965, 2010, 5))
 
 if execute_all_transects == False:
     # Set the transect and years for retrieval request
     transect_name   = "08_Meijendel"
     #transect_req = np.arange(8009325, 8009750, 1)
-    #transect_req        = [8007975]
-    #transect_req        = [8007400]
-    #transect_req        = [8007250]
+    # transect_req        = [8009150]
+    # transect_req        = [8009275]
+    # transect_req        = [8009300]
+    # transect_req        = [8007400]
+    # transect_req        = [7004400]
+    # transect_req        = [8007250]
+    # transect_req        = [9011510]  #Example transect!
     transect_req        = [9011535] #Example transect!
-    #transect_req        = [16001775]
+    # transect_req        = [8008700] #Example transect!
+    # transect_req        = [16001775]
+    # transect_req        = [8006000]
+    # transect_req        = [8005925]
+    # transect_req        = [8007950]
+    # transect_req        = [12001825]
+    # transect_req        = [16001795]
     idxs = np.isin(transect_req, ids) # check which transect are available of those that were requested
     ids_filtered = np.array(transect_req)[np.nonzero(idxs)[0]]
     Dir_plots = settings['Dir_figures'] + transect_name.replace(" ","") + "/"
@@ -94,7 +104,7 @@ else:
 ##################################
 # Set x and y limit of plots - Leave lists empty (i.e. []) for automatic axis limits
 xlimit = [-100,150] # EXAMPLE: [-400,1000]
-ylimit = [-1, 16] # EXAMPLE: [-10,22]
+ylimit = [-2.1, 16] # EXAMPLE: [-10,22]
 
 years_requested_str = [str(yr) for yr in years_requested]
 
@@ -134,20 +144,36 @@ for idx in ids_filtered:
     #title =  "Transect near Hoek van Holland (before large nourishment)"
     title = ""
     fig = multilineplot(cross_shore, y_all, years_requested, title, "Cross shore distance [m]", "Elevation [m to datum]", xlimit, ylimit)
-    
+        
     ##################################
     ####  LOAD DIMENSIONS FILE    ####
     ##################################
-    Dir_pickles = settings['Dir_C3']
+    Dir_pickles = settings['Dir_B']
 
     pickle_file = Dir_pickles + 'Transect_' + trsct + '_dataframe.pickle'
     Dimensions = pickle.load(open(pickle_file, 'rb'))
 
-    plt.plot(Dimensions['DF_fix_x'][years_requested_str], Dimensions['DF_fix_y'][years_requested_str], 'kx', markersize=12, mew=3, label = 'Historic')
-    plt.plot(Dimensions['DF_der_x'][years_requested_str], Dimensions['DF_der_y'][years_requested_str], 'rx', markersize=12, mew=3, label = 'Derivative')
-    plt.plot(Dimensions['DF_pybeach_mix_x'][years_requested_str], Dimensions['DF_pybeach_mix_y'][years_requested_str], 'gx', markersize=12, mew=3, label = 'Machine Learning')
+    import matplotlib.colors as colors
+    import matplotlib.cm as cmx
+
     
-    plt.legend(loc='upper right', fontsize = 24)
+    jet = plt.get_cmap('jet') 
+    cNorm  = colors.Normalize(vmin=1965, vmax=2017)
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    
+    plt.plot(Dimensions.loc[1980, 'Dunefoot_x_der_new'], Dimensions.loc[1980,'Dunefoot_y_der_new'], 'o', markersize=13, color = 'grey', mew=3, label = 'Dune toe')
+    
+	# Load and plot data per year
+    lines = []
+    years_requested = list(range(1965, 2017, 1))
+    for i, yr in enumerate(years_requested): #list(range(1980, 2017, 1))
+        colorVal = scalarMap.to_rgba(yr)
+
+    # plt.plot(Dimensions['DF_fix_x'][years_requested_str], Dimensions['DF_fix_y'][years_requested_str], 'kx', markersize=12, mew=3, label = 'Historic')
+        plt.plot(Dimensions.loc[yr, 'Dunefoot_x_der_new'], Dimensions.loc[yr,'Dunefoot_y_der_new'], 'o', markersize=13, color = colorVal, mew=3)
+    # plt.plot(Dimensions['DF_pybeach_mix_x'][years_requested_str], Dimensions['DF_pybeach_mix_y'][years_requested_str], 'gx', markersize=12, mew=3, label = 'Machine Learning')
+    
+    plt.legend(loc='upper right', fontsize = 22)
     
     
     # Show the figure    
@@ -158,10 +184,3 @@ for idx in ids_filtered:
     #pickle.dump(fig, open(Dir_plots + 'Transect_' + title[9:] + '.fig.pickle', 'wb'))
     
     #plt.close()
-
-"""
-# Dummy data for plotting
-# years = [1965, 1966, 1967]
-# cross_shore = [np.array([-50, 0, 50, 100, 150]), np.array([-50, 0, 50, 100, 150]), np.array([-50, 0, 50, 100, 150])]
-# elevation = [np.array([-5, 0, 4, 9, 15]), np.array([-3, 0, 3, 7, 12]), np.array([-4, 0, 4, 8, 14])]
-""" 

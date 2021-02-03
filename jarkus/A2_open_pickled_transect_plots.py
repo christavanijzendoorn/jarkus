@@ -49,13 +49,13 @@ with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Settings.txt")
 
 # Set the transect and years for retrieval request    
 transect_name = "08_Meijendel"
-transect_req = [8009575]
+transect_req = [8009325]
 years_requested = range(2000, 2020, 1)
 
 ##################################
 ####  LOAD DIMENSIONS FILE    ####
 ##################################
-Dir_pickles = settings['Dir_C3']
+Dir_pickles = settings['Dir_B']
 trsct = str(transect_req[0])
 
 pickle_file = Dir_pickles + 'Transect_' + trsct + '_dataframe.pickle'
@@ -70,10 +70,13 @@ Dir_fig = settings['Dir_A']
 # Load figure from disk and display
 fig = pickle.load(open(Dir_fig + 'Transect_' + fig_transect + '.fig.pickle','rb'))
 
-plt.plot(Dimensions['DF_pybeach_mix_x'], Dimensions['DF_pybeach_mix_y'], 'g^')
-plt.plot(Dimensions['DF_der_x'], Dimensions['DF_der_y'], 'bs')
-plt.plot(Dimensions['DF_fix_x'], Dimensions['DF_fix_y'], 'ro')
+# plt.plot(Dimensions['DF_pybeach_mix_x'], Dimensions['DF_pybeach_mix_y'], 'g^')
+# plt.plot(Dimensions['DF_der_x'], Dimensions['DF_der_y'], 'bs')
+# plt.plot(Dimensions['DF_fix_x'], Dimensions['DF_fix_y'], 'ro')
+plt.axvline(Dimensions.loc[2018, 'Seaward_x_DoC'])
 
     
 plt.show()
+
+
 

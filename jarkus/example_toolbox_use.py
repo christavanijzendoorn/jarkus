@@ -36,65 +36,66 @@ DirVarPlots = settings['Dir_D2']
 ######################
 start_yr = 1965                                                                # USER-DEFINED request for years
 end_yr = 2020
-trscts_requested = 2000303
+trscts_requested = 8009325
 #trscts_requested = [8009325, 8009350]
 #trscts_requested = np.arange(8009000, 8009751, 1)                               # USER-DEFINED request for transects
 
 # Set whether all transect should be analysed or define a retrieval request
-execute_all_transects = True
+execute_all_transects = False
 
 # Select which dimensions should be calculated for the transects
-dune_height_and_location    = True
+dune_height_and_location    = False
 
-mean_sea_level              = True
-mean_low_water_fixed        = True
-mean_low_water_variable     = True
-mean_high_water_fixed       = True
-mean_high_water_variable    = True
-mean_sea_level_variable     = True
+mean_sea_level              = False
+mean_low_water_fixed        = False
+mean_low_water_variable     = False
+mean_high_water_fixed       = False
+mean_high_water_variable    = False
+mean_sea_level_variable     = False
 
-intertidal_width_fixed      = True
-intertidal_width_variable   = True
+intertidal_width_fixed      = False
+intertidal_width_variable   = False
 
-landward_point_variance     = True
-landward_point_derivative   = True
-landward_point_bma          = True
+landward_point_variance     = False
+landward_point_derivative   = False
+landward_point_bma          = False
 
-seaward_point_foreshore     = True
-seaward_point_activeprofile = True
+seaward_point_foreshore     = False
+seaward_point_activeprofile = False
+seaward_point_doc           = False
 
-dune_foot_fixed             = True
-dune_foot_derivative        = True
-dune_foot_pybeach           = True
+dune_foot_fixed             = False
+dune_foot_derivative        = False
+dune_foot_pybeach           = False
 
-beach_width_fix             = True
-beach_width_var             = True
-beach_width_der             = True
-beach_width_der_var         = True
+beach_width_fix             = False
+beach_width_var             = False
+beach_width_der             = False
+beach_width_der_var         = False
 
-beach_gradient_fix          = True
-beach_gradient_var          = True
+beach_gradient_fix          = False
+beach_gradient_var          = False
 beach_gradient_der          = True
 
-dune_front_width_prim_fix   = True
-dune_front_width_prim_der   = True
-dune_front_width_sec_fix    = True
-dune_front_width_sec_der    = True
+dune_front_width_prim_fix   = False
+dune_front_width_prim_der   = False
+dune_front_width_sec_fix    = False
+dune_front_width_sec_der    = False
 
-dune_front_gradient_prim_fix= True
-dune_front_gradient_prim_der= True
-dune_front_gradient_sec_fix = True
-dune_front_gradient_sec_der = True
+dune_front_gradient_prim_fix= False
+dune_front_gradient_prim_der= False
+dune_front_gradient_sec_fix = False
+dune_front_gradient_sec_der = False
 
-dune_volume_fix             = True
+dune_volume_fix             = False
 dune_volume_der             = True
 
-intertidal_gradient         = True
-intertidal_volume_fix       = True
-intertidal_volume_var       = True
+intertidal_gradient         = False
+intertidal_volume_fix       = False
+intertidal_volume_var       = False
 
-foreshore_gradient          = True
-foreshore_volume            = True
+foreshore_gradient          = False
+foreshore_volume            = False
 
 active_profile_gradient     = True
 active_profile_volume       = True
@@ -122,8 +123,8 @@ else:
     trscts_filtered, trscts_filtered_idxs = TB.get_transects_filtered(trscts_requested, variables)
     
     # # Use this if you want to skip transects, e.g. if your battery died during running...
-    # trscts_filtered = trscts_filtered[1185:]
-    # trscts_filtered_idxs = trscts_filtered_idxs[1185:]
+    # trscts_filtered = trscts_filtered[1379:]
+    # trscts_filtered_idxs = trscts_filtered_idxs[1379:]
 #%%
 ######################
 # LOOPING through TRSCTS
@@ -170,57 +171,58 @@ for i, trsct in enumerate(trscts_filtered):
         dimensions.set_index('years', inplace=True)
     
     # extract dimensions
-    dimensions = TB.get_dune_height_and_location(dune_height_and_location, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_height_and_location(dune_height_and_location, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_mean_sea_level(mean_sea_level, elevation_dataframe, dimensions)
-    dimensions = TB.get_mean_low_water_fixed(mean_low_water_fixed, elevation_dataframe, dimensions)
-    dimensions = TB.get_mean_low_water_variable(mean_low_water_variable, elevation_dataframe, df, dimensions)
-    dimensions = TB.get_mean_high_water_fixed(mean_high_water_fixed, elevation_dataframe, dimensions)
-    dimensions = TB.get_mean_high_water_variable(mean_high_water_variable, elevation_dataframe, df, dimensions)
-    dimensions = TB.get_mean_sea_level_variable(mean_sea_level_variable, dimensions)
+    # dimensions = TB.get_mean_sea_level(mean_sea_level, elevation_dataframe, dimensions)
+    # dimensions = TB.get_mean_low_water_fixed(mean_low_water_fixed, elevation_dataframe, dimensions)
+    # dimensions = TB.get_mean_low_water_variable(mean_low_water_variable, elevation_dataframe, df, dimensions)
+    # dimensions = TB.get_mean_high_water_fixed(mean_high_water_fixed, elevation_dataframe, dimensions)
+    # dimensions = TB.get_mean_high_water_variable(mean_high_water_variable, elevation_dataframe, df, dimensions)
+    # dimensions = TB.get_mean_sea_level_variable(mean_sea_level_variable, dimensions)
     
-    dimensions = TB.get_intertidal_width_fixed(intertidal_width_fixed, dimensions)
-    dimensions = TB.get_intertidal_width_variable(intertidal_width_variable, dimensions)
+    # dimensions = TB.get_intertidal_width_fixed(intertidal_width_fixed, dimensions)
+    # dimensions = TB.get_intertidal_width_variable(intertidal_width_variable, dimensions)
     
-    dimensions = TB.get_landwardpoint_variance(landward_point_variance, elevation_dataframe, dimensions)
-    dimensions = TB.get_landwardpoint_derivative(landward_point_derivative, elevation_dataframe, dimensions)
-    dimensions = TB.get_landwardpoint_bma(landward_point_bma, elevation_dataframe, dimensions)
+    # dimensions = TB.get_landwardpoint_variance(landward_point_variance, elevation_dataframe, dimensions)
+    # dimensions = TB.get_landwardpoint_derivative(landward_point_derivative, elevation_dataframe, dimensions)
+    # dimensions = TB.get_landwardpoint_bma(landward_point_bma, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_seawardpoint_foreshore(seaward_point_foreshore, elevation_dataframe, dimensions)
-    dimensions = TB.get_seawardpoint_activeprofile(seaward_point_activeprofile, elevation_dataframe, dimensions)
+    # dimensions = TB.get_seawardpoint_foreshore(seaward_point_foreshore, elevation_dataframe, dimensions)
+    # dimensions = TB.get_seawardpoint_activeprofile(seaward_point_activeprofile, elevation_dataframe, dimensions)
+    # dimensions = TB.get_seawardpoint_depthofclosure(seaward_point_doc, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_dune_foot_fixed(dune_foot_fixed, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_foot_derivative(dune_foot_derivative, elevation_dataframe, dimensions)    
-    dimensions = TB.get_dune_foot_pybeach(dune_foot_pybeach, elevation_dataframe, dimensions) 
+    # dimensions = TB.get_dune_foot_fixed(dune_foot_fixed, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_foot_derivative(dune_foot_derivative, elevation_dataframe, dimensions)    
+    # dimensions = TB.get_dune_foot_pybeach(dune_foot_pybeach, elevation_dataframe, dimensions) 
     
-    dimensions = TB.get_beach_width_fix(beach_width_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_beach_width_var(beach_width_var, elevation_dataframe, dimensions)
-    dimensions = TB.get_beach_width_der(beach_width_der, elevation_dataframe, dimensions)
-    dimensions = TB.get_beach_width_der_var(beach_width_der_var, elevation_dataframe, dimensions)
+    # dimensions = TB.get_beach_width_fix(beach_width_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_beach_width_var(beach_width_var, elevation_dataframe, dimensions)
+    # dimensions = TB.get_beach_width_der(beach_width_der, elevation_dataframe, dimensions)
+    # dimensions = TB.get_beach_width_der_var(beach_width_der_var, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_beach_gradient_fix(beach_gradient_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_beach_gradient_var(beach_gradient_var, elevation_dataframe, dimensions)
+    # dimensions = TB.get_beach_gradient_fix(beach_gradient_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_beach_gradient_var(beach_gradient_var, elevation_dataframe, dimensions)
     dimensions = TB.get_beach_gradient_der(beach_gradient_der, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_dune_front_width_prim_fix(dune_front_width_prim_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_front_width_prim_der(dune_front_width_prim_der, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_front_width_sec_fix(dune_front_width_sec_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_front_width_sec_der(dune_front_width_sec_der, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_width_prim_fix(dune_front_width_prim_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_width_prim_der(dune_front_width_prim_der, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_width_sec_fix(dune_front_width_sec_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_width_sec_der(dune_front_width_sec_der, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_dune_front_gradient_prim_fix(dune_front_gradient_prim_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_front_gradient_prim_der(dune_front_gradient_prim_der, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_front_gradient_sec_fix(dune_front_gradient_sec_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_dune_front_gradient_sec_der(dune_front_gradient_sec_der, elevation_dataframe, dimensions)    
+    # dimensions = TB.get_dune_front_gradient_prim_fix(dune_front_gradient_prim_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_gradient_prim_der(dune_front_gradient_prim_der, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_gradient_sec_fix(dune_front_gradient_sec_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_front_gradient_sec_der(dune_front_gradient_sec_der, elevation_dataframe, dimensions)    
     
-    dimensions = TB.get_dune_volume_fix(dune_volume_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_dune_volume_fix(dune_volume_fix, elevation_dataframe, dimensions)
     dimensions = TB.get_dune_volume_der(dune_volume_der, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_intertidal_gradient(intertidal_gradient, elevation_dataframe, dimensions)
-    dimensions = TB.get_intertidal_volume_fix(intertidal_volume_fix, elevation_dataframe, dimensions)
-    dimensions = TB.get_intertidal_volume_var(intertidal_volume_var, elevation_dataframe, dimensions)
+    # dimensions = TB.get_intertidal_gradient(intertidal_gradient, elevation_dataframe, dimensions)
+    # dimensions = TB.get_intertidal_volume_fix(intertidal_volume_fix, elevation_dataframe, dimensions)
+    # dimensions = TB.get_intertidal_volume_var(intertidal_volume_var, elevation_dataframe, dimensions)
     
-    dimensions = TB.get_foreshore_gradient(foreshore_gradient, elevation_dataframe, dimensions)
-    dimensions = TB.get_foreshore_volume(foreshore_volume, elevation_dataframe, dimensions)
+    # dimensions = TB.get_foreshore_gradient(foreshore_gradient, elevation_dataframe, dimensions)
+    # dimensions = TB.get_foreshore_volume(foreshore_volume, elevation_dataframe, dimensions)
     
     dimensions = TB.get_active_profile_gradient(active_profile_gradient, elevation_dataframe, dimensions)
     dimensions = TB.get_active_profile_volume(active_profile_volume, elevation_dataframe, dimensions)
@@ -244,7 +246,7 @@ pickle_file = DirDataframes + 'Transect_' + str(trsct) + '_dataframe.pickle'
 dimensions = pickle.load(open(pickle_file, 'rb')) #load pickle of dimension   
 
 variables = list(dimensions.columns)
-variables = ['Dunefoot_x_pybeach_mix', 'Dunefoot_y_pybeach_mix']
+variables = ['Active_profile_volume', 'Active_profile_gradient', 'Seaward_x_DoC', 'DuneVol_der', 'Beach_gradient_der']
 
 # Convert dataframes with variables per transect to dataframes with values per transect for each variable
 for i in range(len(variables)):    
@@ -274,6 +276,7 @@ pickle_file = DirDataframes + 'Transect_' + str(trsct) + '_dataframe.pickle'
 dimensions = pickle.load(open(pickle_file, 'rb')) #load pickle of dimension    
 
 variables = list(dimensions.columns)
+variables = ['Active_profile_volume', 'Active_profile_gradient', 'Seaward_x_DoC', 'DuneVol_der', 'Beach_gradient_der']
 
 trscts_vis = trscts_filtered
 

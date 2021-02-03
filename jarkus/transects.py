@@ -39,17 +39,15 @@ class Transects:
             self.url = kwargs.pop('url')
         else:
             self.url = 'https://opendap.tudelft.nl/thredds/catalog/data2/deltares/rijkswaterstaat/jarkus/profiles/catalog.html?dataset=scanDatasets2/deltares/rijkswaterstaat/jarkus/profiles/transect.nc'
-        
         try:
-			#self.ds = Dataset("C://Users//cijzendoornvan//Documents//DuneForce//JARKUS//Transect_Data//transect_r20180914.nc")
-			# CHRISTA: line above is a hack I used to refer to local file. By downloading the Jarkus data and referring to the file here, the scripts become independent of internet access. This could be build in more robustly...
-            self.ds = Dataset(self.url)
+            self.ds = Dataset("C://Users//cijzendoornvan//Documents//DuneForce//JARKUS//Transect_Data//transect.nc")
+            # CHRISTA: line above is a hack I used to refer to local file. By downloading the Jarkus data and referring to the file here, the scripts become independent of internet access. This could be build in more robustly
+            # self.ds = Dataset(self.url)
         except OSError as e:
             err = ('%e. "%s" not found.' %(e,self.url))
             logger.error(err)
             raise err
-        
-            
+
         self.dims = self.ds.dimensions
 
         # initiate filter

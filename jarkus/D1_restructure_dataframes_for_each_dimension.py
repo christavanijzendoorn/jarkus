@@ -77,7 +77,7 @@ def extract_variable(variable, dir_per_trsct, dir_per_var, transects, years):
 with open("C:/Users/cijzendoornvan/Documents/GitHub/jarkus/jarkus/Settings.txt") as file:
     settings = json.load(file)
 
-Dir_per_transect = settings['Dir_C3'] #C3 is standard, B if one extra dimension was calculated.
+Dir_per_transect = settings['Dir_B'] #C3 is standard, B if one extra dimension was calculated.
 Dir_per_variable = settings['Dir_D1']
 
 years_requested = list(range(1965, 2020))
@@ -109,7 +109,7 @@ pickle_file = Dir_per_transect + 'Transect_' + trsct + '_dataframe.pickle'
 Dimensions_test = pickle.load(open(pickle_file, 'rb')) #load pickle of dimensions    
 variables = list(Dimensions_test.columns)
 
-variables = ['DF_pybeach_mix_y', 'DF_pybeach_mix_x'] 
+#variables = ['DF_pybeach_mix_y', 'DF_pybeach_mix_x'] 
 
 for i in range(len(variables)):    
     Variable_DF = extract_variable(variables[i], Dir_per_transect, Dir_per_variable, ids_filtered, years_requested)

@@ -105,4 +105,22 @@ n = daily_avg_sorted.shape[0]
 daily_max = TWL.resample('D').max()
 labels = timeseries_regression(daily_max)
     
+#%%
 
+waves = r"C:\Users\cijzendoornvan\Documents\DuneForce\JARKUS\ANALYSIS\old\C1_environmental_conditions_hourly\Wave_heigth_hourly.pickle"
+waves_df = pickle.load(open(waves, 'rb'))
+
+waves = waves_df.groupby([waves_df.index.year, pd.cut(waves_df['NUMERIEKEWAARDE'], [0, 50, 100, 150, 250, 350, 550])]).count()
+
+waves_df.loc[waves_df['NUMERIEKEWAARDE'] == 999999999] = np.nan
+totals_yr = waves_df.groupby(waves_df.index.year).count()
+
+stacked_data = waves / totals_yr * 100
+stacked_data = stacked_data.unstack(level=-1)
+
+from matplotlib.pyplot import *
+ax = stacked_data.plot(kind="bar", stacked=True, color = ['#fac203', '#d89002', '#29893C','#136207', '#4169e1', 'grey'])
+ax.legend(["0-50 cm", "50-100 cm", "100-150 cm", "150-250 cm", "250-350 cm ", "350-550 cm"]);
+ax.set_title("Percentage of wave height occurrence per year")
+ax.set_xlabel("Year")
+ax.set_ylabel("Percentage (%)")
